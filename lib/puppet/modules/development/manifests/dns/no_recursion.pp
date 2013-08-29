@@ -1,7 +1,7 @@
 class development::dns::no_recursion {
 
-	if file_exists('/etc/bownty/config/resolvers.yaml') {
-		$dns_resolvers = loadyaml('/etc/bownty/config/resolvers.yaml')
+	if file_exists('/etc/vagrant/config/resolvers.yaml') {
+		$dns_resolvers = loadyaml('/etc/vagrant/config/resolvers.yaml')
 	} else {
 		$dns_resolvers = ['192.168.1.1']
 	}

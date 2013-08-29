@@ -5,7 +5,7 @@ class roles::vagrant {
     content  => "vagrant ALL=(ALL) NOPASSWD: ALL",
   }
 
-  $sites = loadyaml('/etc/bownty/config/sites.yaml')
+  $sites = loadyaml('/etc/vagrant/config/sites.yaml')
   if $sites {
     create_resources(mysql_support::db_with_user_and_grant, $sites)
     create_resources(development::nginx::vhost, $sites)

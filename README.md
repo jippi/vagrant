@@ -17,9 +17,9 @@ SSH:
 user: cakefest
 pass: cakefest
 
-Put your `id_rsa` and `id_rsa.pub` in `development/users/cakefest/.ssh`
+Put your `id_rsa` and `id_rsa.pub` in `development/config/users/cakefest/.ssh`
 
-Make sure they are with permission `0500` (`chmod -R development/users/cakefest/.ssh`)
+Make sure they are with permission `0500` (`chmod -R 0700 development/config/users/cakefest/.ssh`)
 
 Hostname:
 

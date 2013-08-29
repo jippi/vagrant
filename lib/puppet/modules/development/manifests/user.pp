@@ -35,7 +35,7 @@ define development::user(
 		file {
 			"/home/$name/.ssh/id_rsa.pub":
 				ensure		=> $ensure,
-				source		=> "/etc/bownty/config/users/$name/.ssh/id_rsa.pub",
+				source		=> "/etc/vagrant/config/users/$name/.ssh/id_rsa.pub",
 				mode 			=> "0600",
 				owner			=> $uid,
 				group			=> $gid,
@@ -43,7 +43,7 @@ define development::user(
 
 			"/home/$name/.ssh/authorized_keys":
 				ensure	=> $ensure,
-				source	=> "/etc/bownty/config/users/$name/.ssh/id_rsa.pub",
+				source	=> "/etc/vagrant/config/users/$name/.ssh/id_rsa.pub",
 				mode 		=> "0600",
 				owner		=> $uid,
 				group		=> $gid,
@@ -57,7 +57,7 @@ define development::user(
 	if ($ssh_private_key) {
 		file { "/home/$name/.ssh/id_rsa":
 			ensure	=> $ensure,
-			source	=> "/etc/bownty/config/users/$name/.ssh/id_rsa",
+			source	=> "/etc/vagrant/config/users/$name/.ssh/id_rsa",
 			mode 		=> "0600",
 			owner		=> $uid,
 			group		=> $gid,
@@ -73,7 +73,7 @@ define development::user(
 			"/home/${name}":
 				require 	=> User[$name],
 				ensure		=> 'directory',
-				source		=> "/etc/bownty/config/users/${name}",
+				source		=> "/etc/vagrant/config/users/${name}",
 				recurse		=> true,
 				force 		=> true,
 				replace		=> true,
