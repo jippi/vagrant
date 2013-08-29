@@ -54,7 +54,9 @@ phpMyAdmin can be found at http://local.cakefest.org/phpmyadmin
 There will be 3 DBs
 
 `cakefest` - the primary db
+
 `cakefest_seed` - the optional seed db for tests
+
 `cakefest_test` - the test db for phpunit
 
 ### CakePHP DB Config
