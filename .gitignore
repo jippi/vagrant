@@ -1,11 +1,4 @@
 .vagrant
 .DS_Store
-development/config/sites.yaml
-development/config/users.yaml
-development/config/resolvers.yaml
-development/config/users
-development/config/ssh/*/public
-development/config/ssh/*/private
-development/config/dns.sh
 logs
 development/shared

@@ -1,8 +1,10 @@
 # Disclaimer
 
-This is kinda broken, please poke me at CakeFest to get a pre-build box
+This is kinda broken, please poke me (Jippi) to get a pre-build box
 
 In case you really want to build it from scratch, then run "vagrant provision" like ~20 times to make it all work
+
+It probably won't work yet though ;)
 
 ### Usage
 
@@ -66,3 +68,15 @@ There is a pre-defined `database.php` in `www/cakefest/database.php` - you can c
 ### Composer
 
 Composer is installed globally as `composer`
+
+### Software
+
+```
+PHP 5.5
+Percona MySQL 5.6
+Elastic Search 0.90.3
+Redis
+Gearman
+PHPunit
+Nginx
+```
