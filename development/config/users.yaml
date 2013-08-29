@@ -1,0 +1,5 @@
+---
+cakefest:
+  password: '$1$EWiVVzKP$wt1L6A2cHnfl7U0qYrrh0/' # cakefest
+  ssh_public_key: true
+  ssh_private_key: true
