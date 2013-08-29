@@ -1,0 +1,51 @@
+<?php
+// Managed by Puppet - will be overwritten
+// every time you provision, please don't change
+
+class DATABASE_CONFIG {
+
+	var $default = array(
+		'datasource'    => 'Database/Mysql',
+		'persistent'    => false,
+		'host'          => 'localhost',
+		'login'         => '<%= name -%>',
+		'password'      => '<%= password -%>',
+		'database'      => '<%= name -%>',
+		'prefix'        => '',
+		'encoding'      => 'utf8',
+	);
+
+	var $test = array(
+		'datasource'    => 'Database/Mysql',
+		'persistent'    => false,
+		'host'          => 'localhost',
+		'login'         => '<%= name -%>',
+		'password'      => '<%= password -%>',
+		'database'      => '<%= name -%>_test',
+		'prefix'        => '',
+		'encoding'      => 'utf8',
+	);
+
+	var $test_seed = array(
+		'datasource'    => 'Database/Mysql',
+		'persistent'    => false,
+		'host'          => 'localhost',
+		'login'         => '<%= name -%>',
+		'password'      => '<%= password -%>',
+		'database'      => '<%= name -%>_seed',
+		'prefix'        => '',
+		'encoding'      => 'utf8',
+	);
+
+	public function __construct() {
+		$connections = Configure::read('DATABASE_CONFIG');
+		if (empty($connections)) {
+			return;
+		}
+
+		foreach ($connections as $name => $config) {
+			$this->{$name} = $config;
+		}
+	}
+
+}

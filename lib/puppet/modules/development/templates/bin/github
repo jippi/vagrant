@@ -1,0 +1,10 @@
+#!/bin/sh
+
+keyfile="$HOME.ssh/id_rsa"
+if [ ! -e "$keyfile" ]
+then
+	echo "Missing ssh private key... ($keyfile)" >&2
+	exit 1
+fi
+
+exec ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile="$HOME.ssh/known_hosts" -i "$keyfile" "$@"

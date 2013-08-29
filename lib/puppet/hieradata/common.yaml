@@ -1,0 +1,48 @@
+---
+classes:
+  - augeas
+  - apt
+  - essentials
+  - bash
+  - postfix
+  - supervisor
+  - syslog-ng
+  - sudo
+  - ssh::server
+  - roles::php
+
+# PHP version configuration
+roles::php::version: "5.5.1-1~dotdeb.1"
+roles::php_fpm::version: "5.5.1-1~dotdeb.1"
+
+# What manifest to use for cronjobs
+puppet_support::files::manifest: "site"
+
+# Change the root e-mail in aliases
+postfix::aliases::root: "root@example.com"
+
+# PHPMyAdmin version
+phpmyadmin::version      : "4.0.5"
+phpmyadmin::db_host      : 'localhost'
+phpmyadmin::control_user : 'phpmyadmin'
+phpmyadmin::control_pass : 'pmapass'
+
+# Default MySQL configuration
+mysql::root_password        : 'ieKeeHai4mah6po'
+mysql::client_package_name  : 'percona-server-client-5.6'
+mysql::server::package_name : 'percona-server-server-5.6'
+mysql::server::config_hash  :
+  bind_address  : '0.0.0.0'
+  default_engine: 'innodb'
+
+# default NodeJS config
+nodejs::package::version: '0.10.15'
+
+# default Elastic Search config
+elasticsearch::version: '0.90.3'
+
+# default Redis config
+redis::version: 'latest'
+
+# phpunit
+php::phpunit::ensure: "3.7.24"

@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# a function to goto the app directory
+# works almost anywhere under the app directory - if you're not
+# in an application it will cd to the root of the repository
+
+root=`git rev-parse --show-toplevel`;
+
+if [[ -d $root/app ]]; then
+	cd $root/app;
+elif [[ -d $root/../../Plugin ]]; then
+	cd $root/../..;
+else
+	cd $root;
+fi

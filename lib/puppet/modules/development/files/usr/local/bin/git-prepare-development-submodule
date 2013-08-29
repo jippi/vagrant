@@ -1,0 +1,148 @@
+#!/bin/sh
+
+. "/usr/local/include/git-shared-lib"
+
+# Require a git repo
+require_git_repo
+
+# $name is the name of the relevant submodule section in .gitmodules,
+name=$1
+
+# $path is the name of the submodule directory relative to the superproject,
+path=$2
+
+# $sha1 is the commit as recorded in the superproject,
+sha1=$3
+
+# $toplevel is the absolute path to the top-level of the superproject.
+toplevel=$4
+
+if [ -z "$4" ]
+then
+	warn "This script should only be invoked like this:"
+	warn ""
+	warn "git submodule foreach 'git prepare-development-submodule \$name \$path \$sha1 \$toplevel'"
+	die ""
+fi
+
+git_remote_branch_exists() {
+	has $1 $(git_remote_branches)
+}
+
+# Get the absolute path
+abs_root=$(readlink -f .)
+
+# Cache the current branch
+current_branch=$(git_current_branch)
+echo "-> $name ($abs_root)"
+echo "--> Branch: $current_branch"
+echo "--> SHA1  : $sha1"
+
+if [ "$name" = "vendors/cakephp" ]
+then
+	echo "---> Skipping folder - should only be upgraded by hand"
+	exit 0;
+fi
+
+if ! git config --get remote.origin.url | grep -q nodesagency
+then
+	echo "---> Skipping folder - remote.origin.url does not point to nodesagency at github"
+	exit 0;
+fi
+
+echo "--> Checking for detached head"
+# Checkout master if we are in detached HEAD
+if ! git symbolic-ref -q HEAD > /dev/null
+then
+	echo "---> Checking out master"
+	if ! git checkout master
+	then
+		die "Failed to checkout master"
+	fi
+
+	echo "---> Pulling down master"
+	if ! git pull -q origin master
+	then
+		die "Failed to pull origin/master"
+	fi
+fi
+echo "---> OK"
+
+echo "--> Checking for clean working tree"
+if ! git_is_clean_working_tree
+then
+        die "Your working directory is dirty, please make sure to commit everything first"
+fi
+echo "---> OK"
+
+echo "--> Fetching everything from origin"
+if ! git fetch -q origin
+then
+        die "... failed (Could not fetch all remote changes)"
+fi
+
+echo "Checking if master branch exist"
+if ! git_local_branch_exists "master"
+then
+        echo "-> Local master branch does not eixsts.."
+        if ! git checkout -q master
+        then
+                die " ... failed (Could not checkout local master branch"
+        fi
+        echo "-> OK"
+else
+        echo "-> OK"
+fi
+
+echo "--> Make sure git flow is enabled"
+if ! gitflow_is_initialized
+then
+	if ! git flow init -d
+	then
+		die "Failed to initialize git flow"
+	fi
+fi
+echo "---> OK"
+
+if [ "$current_branch" = "master" ]
+then
+	echo "---> Changeing branch from master to develop"
+	if ! git checkout -q develop
+	then
+		die "Failed to change branch from master to develop"
+	fi
+fi
+
+###### MASTER BRANCH
+
+echo "--> Updating local/master with origin/master"
+if ! git checkout -q master
+then
+	die "... failed (Could not switch to master branch)"
+fi
+
+if ! git merge -q origin/master
+then
+	die "... failed (Could not pull origin/master into local/master"
+fi
+
+###### DEVELOP BRANCH
+
+if git_remote_branch_exists "origin/develop"
+then
+	echo "--> Updating local/develop with origin/develop"
+	if ! git checkout -q develop
+	then
+		die "... failed (Could not switch to develop branch"
+	fi
+
+	if ! git merge -q origin/develop
+	then
+		die "... failed (Could not pull origin/develop into local/develop"
+	fi
+fi
+
+# Switch back to develop branch
+git checkout -q develop
+
+echo "---> OK"

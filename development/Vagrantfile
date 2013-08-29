@@ -1,0 +1,44 @@
+#
+# Cluster requirements:
+#
+#   CPU: 4 CPU cores
+#   Memory: 2 GB
+#   Disk: 40 GB
+#
+# see "VBoxManage modifyvm" command for modifyvm options
+#
+VAGRANT_ROOT = File.dirname(__FILE__)
+
+Vagrant.configure("2") do |config|
+  config.vm.box         = "debian7-bownty-21052013"
+  config.vm.box_url     = "https://dl.dropboxusercontent.com/u/27514/bownty/debian7-bownty-21052013.box"
+
+  config.vm.hostname    = "local.cakefest.org"
+
+  config.ssh.timeout    = 10
+  config.ssh.max_tries  = 25
+
+  config.vm.provider "virtualbox" do |v|
+    v.customize ["modifyvm", :id, "--cpus", "4"]
+    v.customize ["modifyvm", :id, "--memory", 2048]
+    v.customize ["modifyvm", :id, "--name", "local.cakefest.org"]
+  end
+
+  config.vm.network :private_network, ip: "10.10.10.10"
+  config.vm.network :public_network
+  config.vm.network :forwarded_port, guest: 80, host: 8080
+
+  if ENV['USER'] == 'lorenzo'
+    config.vm.synced_folder '/Users/lorenzo/Sites/bownty', '/var/www/bownty/htdocs'
+  end
+
+  Dir.mkdir VAGRANT_ROOT + '/shared' unless Dir.exists? VAGRANT_ROOT + '/shared'
+
+  config.vm.synced_folder VAGRANT_ROOT + '/shared', "/shared"
+  config.vm.synced_folder VAGRANT_ROOT + '/../lib/puppet/', "/etc/puppet"
+  config.vm.synced_folder VAGRANT_ROOT + '/config', "/etc/bownty/config"
+
+  config.vm.provision :shell,
+    :inline => "puppet apply /etc/puppet/manifests/site.pp --verbose --debug --trace --environment vagrant"
+
+end

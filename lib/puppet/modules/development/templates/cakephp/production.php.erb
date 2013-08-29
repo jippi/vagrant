@@ -1,0 +1,17 @@
+<?php
+// Managed by Puppet - will be overwritten
+// every time you provision, please don't change
+
+Configure::write('RedisCache.cache', array(
+        'hostname'	=> '127.0.0.1',
+        'port'      => 6379,
+        'prefix'    => "<%= name -%>."
+));
+
+Configure::write('RedisCache.session', array(
+        'hostname'  => '127.0.0.1',
+        'port'      => 6379,
+        'prefix'    => "sessions.<%= name -%>."
+));
+
+Configure::write('Environment.Development.domain', '<%= name -%>.local.cakefest.org');

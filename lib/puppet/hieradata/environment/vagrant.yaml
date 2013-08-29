@@ -1,0 +1,44 @@
+---
+classes:
+  - roles::vagrant
+  - roles::php_fpm
+  - roles::nginx
+  - roles::mysql
+
+  - php::phpunit
+  - php::extension::xdebug
+
+  - phpmyadmin
+  - elasticsearch
+  - redis
+
+  - nodejs::package
+
+  - gearman::server
+  - java::package::openjdk::jre
+
+  - php::extension::gearman
+
+  - ssh::server::config::allow_password
+
+  - development::files
+  - development::users
+  - development::package
+  - development::package::tig
+  - development::package::debug_kit
+  - development::package::uglify
+  - development::package::jslint
+  - development::package::coffee-script
+  - development::package::sprockets
+  - development::package::less
+  - development::package::pngcrush
+  - development::package::imagemagick
+  - development::package::graphviz
+  - development::package::gitflow
+  - development::package::compass
+  - development::package::protagonist
+  - puppet_support::cron
+
+puppet_support::cron::ensure: absent
+
+nginx::package::version: latest

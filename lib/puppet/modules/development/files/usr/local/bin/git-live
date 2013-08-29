@@ -1,0 +1,379 @@
+#!/bin/sh
+
+# enable debug mode
+if [ "$DEBUG" = "yes" ];
+then
+  set -x
+fi
+
+export POSIXLY_CORRECT=1
+export GIT_FLOW_SELF=" "
+
+. "/usr/lib/git-core/gitflow-common"
+. "/usr/local/include/git-shared-lib"
+
+GIT_VERSION=0
+GIT_INTERACTIVE=true
+
+while getopts "o:r:i:" name
+do
+	echo "name: $name"
+  if [ "$name" = "?" ]
+  then
+    continue
+  fi
+
+	if [ "$name" = "o" ]
+  then
+  	GIT_VERSION=$OPTARG
+		continue
+   fi
+
+	if [ "$name" = "r" ]
+  then
+  	GIT_REMOTE=$OPTARG
+		continue
+  fi
+
+	if [ "$name" = "i" ]
+	then
+		GIT_INTERACTIVE=$OPTARG
+		continue
+	fi
+done
+
+echo ""
+echo " Welcome to git live utility"
+echo ""
+echo "This utility will guide you through the following"
+echo " 1) Ask for release size (major | minor | patch) [See: http://semver.org/]"
+echo " 2) git flow release start"
+echo " 3) git flow release finish"
+echo " 3) git push \$remote master:master"
+echo ""
+
+# Change to the root of the git folder
+project_root=`git rev-parse --show-toplevel`
+cd "$project_root"
+
+# Get the absolute path
+abs_root=$(readlink -f $project_root)
+
+# Get the project name
+project_name=$(basename $(dirname $abs_root))
+
+# Run special methods from common
+require_gitflow_initialized
+
+if ! git_is_clean_working_tree
+then
+	die "Your repository has to be clean before running 'git live'. Please commit or stash changes"
+fi
+
+if ! gitflow_has_master_configured
+then
+  die "Missing master branch"
+fi
+
+if git_repo_is_headless
+then
+  die "Sorry, this repo is headless"
+fi
+
+if ! find_git_remote
+then
+  die "Could not find a remote.. dieing"
+fi
+
+current_branch=$(git_current_branch)
+
+echo "Merging remote branchs into local branches:"
+echo " * $git_remote_name/develop      -> local/develop"
+echo " * $git_remote_name/master       -> local/master"
+echo ""
+
+for branch in develop master
+do
+	echo "Updating $git_remote_name/$branch:"
+	if ! git checkout -q $branch
+	then
+		die ">> Failed to checkout $branch"
+	fi
+
+	if ! git pull -q $git_remote_name $branch
+	then
+		die ">> Failed to pull $git_remote_name/$branch"
+	fi
+
+	echo ">> Done"
+done
+
+git checkout -q $current_branch
+
+echo "All branches are up to date..."
+echo ""
+
+# Make sure we don't have any release branches
+git_require_no_existing_release_branches
+
+# TODO: Check we are inside htdocs folder
+
+if [ ! -e "$project_root/.semver" ]
+then
+	if ! git_is_clean_working_tree
+	then
+		warn ""
+		warn "Please make sure your working tree is clean"
+		warn "Cannot make a feature branch on a dirty branch"
+		warn "Basically... commit all your stuff and run git live again"
+		warn ""
+		die "Exiting..."
+	fi
+
+	warn "Missing .semver file - creating it for you"
+
+	current_path=`pwd`
+	cd $abs_root
+
+	git flow feature start "semver"
+	semver init
+	git add .semver
+	git commit .semver -m "Adding .semver"
+	git flow feature finish "semver"
+
+	cd $current_path
+fi
+
+git_commit_message="Preparing release"
+
+cd $abs_root
+current_version=`semver tag`
+
+echo "Semver help:"
+echo ""
+echo "Major: x.0.0"
+echo "Minor: 0.x.0"
+echo "Patch: 0.0.x"
+
+echo ""
+echo "Current version: $current_version"
+echo ""
+
+semver_inc_special=""
+
+while true
+do
+	if [ "$GIT_VERSION" != 0 ]
+	then
+		echo "-> Incrementing version at $GIT_VERSION level"
+		response=$GIT_VERSION
+		GIT_VERSION=0
+	else
+		echo "Next release version:"
+    echo -n "[major|minor|patch] "
+
+		read response
+	fi
+
+	if [ "$response" = "major" ]
+	then
+		semver inc major
+		semver_inc_type="major"
+		break
+	elif [ "$response" = "minor" ]
+	then
+		semver inc minor
+		semver_inc_type="minor"
+		break
+	elif [ "$response" = "patch" ]
+	then
+		semver inc patch
+		semver_inc_type="patch"
+		break
+	else
+		warn "Invalid input. Must be 'major', 'minor' or 'patch'"
+	fi
+done
+
+echo "Do you want to attach a special flag (beta, alpha, RC) to the release?"
+echo -n "[y|n] "
+read response
+
+if [ "$response" = "y" ]
+then
+  echo "Enter the special key:"
+  read key
+  semver_inc_special="$key"
+  semver special "$key"
+fi
+
+current_path=`pwd`
+cd $abs_root
+
+echo ""
+new_version=`semver tag`
+echo "Creating release $new_version"
+
+# Reset the master semver change
+git checkout .semver
+
+# Try and create the new flow release
+if ! git flow release start "$new_version" > /dev/null
+then
+	warn ""
+	warn "Sorry, could not create your release"
+	warn "Please see the errors above"
+	warn ""
+	die "... exiting"
+fi
+
+# Bump submodules
+
+# Re-executing semver command so its part of the release
+semver inc "$semver_inc_type"
+semver special "$semver_inc_special"
+
+# Commiting the .semver file back into git
+git_commit_message="$git_commit_message\nUpdating semver"
+
+if ! is_submodule
+then
+	generate_schema=$(git config --get bownty.$git_remote_name.generate-schema || echo "1")
+
+	if [ $generate_schema = 1 ]
+	then
+		# Generate schema file(s)
+		#
+		if [ -e "$abs_root/app/Config/Schema/schema.php" ]
+		then
+			rm "$abs_root/app/Config/Schema/schema.php"
+		fi
+
+		cd "$abs_root/app"
+		if ! Console/cake schema generate -f -q
+		then
+			warn ""
+			warn "Failed to dump schema file"
+			warn ""
+			die "... exiting"
+		fi
+
+		cd "$abs_root"
+
+		if ! git add "app/Config/Schema/"
+		then
+			warn ""
+			warn "Failed to add app/Config/Schema to git"
+			warn ""
+			die "... exiting"
+		fi
+
+		if ! git_file_clean "app/Config/Schema/schema.php"
+		then
+			git_commit_message="$git_commit_message\nUpdating schema file"
+
+			warn "--------------------------------------------------------------------------"
+			warn ""
+      warn "Your database schema file have been updated"
+	    warn "Please remember to update your production database too"
+			warn ""
+			echo "--------------------------------------------------------------------------"
+
+			git diff --color ^HEAD app/Config/Schema/schema.php
+
+			echo "--------------------------------------------------------------------------"
+			warn ""
+			warn "Please press any key to continue..."
+			read null
+		fi
+	else
+		warn "-------------------------------------------------------------------------"
+		warn ""
+		warn "Skipping schema configuration"
+		warn ""
+		warn "-------------------------------------------------------------------------"
+	fi
+fi
+
+ask_interactive_shell=$(git config --get bownty.$git_remote_name.ask-interactive-shell || echo $GIT_INTERACTIVE);
+if [ "$ask_interactive_shell" = "true" ]
+then
+	echo "Do you want a interactive shell for this release?"
+	echo ""
+	echo "This is useful for doing pre-release stuff"
+	echo -n "[y|n] "
+	while read response
+	do
+    if [ "$response" = "y" ]
+    then
+      git_commit_message="$git_commit_message\nRan interactive shell"
+      echo "--------------------------------------------------------------------------"
+    	echo "Creating new interactive shell"
+      echo ""
+      echo "Type 'exit' when you are done"
+    	echo ""
+      echo "When you type exit, 'git flow release finish' will be called for you"
+      echo ""
+    	echo "DO NOT EXECUTE ANY GIT FLOW COMMANDS"
+      echo "--------------------------------------------------------------------------"
+
+      bash --login
+
+      break
+    elif [ "$response" = "n" ]
+    then
+      break
+    else
+      warn "Invalid input. Must be 'y' or 'n'"
+    fi
+	done
+fi
+
+git_commit_message="$git_commit_message\nFinish release"
+
+echo "$git_commit_message" > "$abs_root/COMMIT_EDITMSG.save"
+
+# Commit all dirty changes
+git commit -a -F "$abs_root/COMMIT_EDITMSG.save"
+
+# Cleanup
+rm "$abs_root/COMMIT_EDITMSG.save"
+
+# Tag message is just version number
+release_args="-m '$new_version'"
+
+echo "executing: git flow release finish $release_args $new_version"
+
+if ! git flow release finish $release_args "'$new_version'"
+then
+	warn ""
+	warn " WARNING"
+	warn ""
+	warn "git flow release finish $release_args '$new_version' failed"
+	warn ""
+	warn ""
+	die "... exiting"
+fi
+
+echo ""
+
+# Publish the tag remotely
+echo "Pushing the new tag ($new_version) to $git_remote_name"
+if ! git push -q $git_remote_name $new_version
+then
+	die "... failed"
+fi
+
+# Publish to remote master
+echo "Pushing master to $git_remote_name"
+if ! git push -q $git_remote_name master
+then
+	die "... failed"
+fi
+
+# Publish to remote develop
+echo "Pushing develop to remote"
+if ! git push -q $git_remote_name develop
+then
+  die "... failed"
+fi

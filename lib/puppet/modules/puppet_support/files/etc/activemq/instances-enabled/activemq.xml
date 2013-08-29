@@ -1,0 +1,81 @@
+<beans
+  xmlns="http://www.springframework.org/schema/beans"
+  xmlns:amq="http://activemq.apache.org/schema/core"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+  http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"/>
+
+  <broker xmlns="http://activemq.apache.org/schema/core"
+    brokerName="localhost"
+    dataDirectory="${activemq.base}/data">
+
+    <destinationPolicy>
+      <policyMap>
+        <policyEntries>
+          <policyEntry topic=">" producerFlowControl="false"/>
+          <policyEntry queue="*.reply.>" gcInactiveDestinations="true" inactiveTimoutBeforeGC="300000" />
+        </policyEntries>
+      </policyMap>
+    </destinationPolicy>
+
+    <managementContext>
+      <managementContext createConnector="false"/>
+    </managementContext>
+
+    <persistenceAdapter>
+      <kahaDB directory="${activemq.base}/data/kahadb"/>
+    </persistenceAdapter>
+
+    <plugins>
+      <authorizationPlugin>
+        <map>
+          <authorizationMap>
+            <authorizationEntries>
+              <authorizationEntry queue=">" write="admins" read="admins" admin="admins" />
+              <authorizationEntry topic=">" write="admins" read="admins" admin="admins" />
+              <authorizationEntry topic="mcollective.>" write="mcollective" read="mcollective" admin="mcollective" />
+              <authorizationEntry queue="mcollective.>" write="mcollective" read="mcollective" admin="mcollective" />
+                  <!--
+                    The advisory topics are part of ActiveMQ, and all users need access to them.
+                    The "everyone" group is not special; you need to ensure every user is a member.
+                  -->
+                  <authorizationEntry topic="ActiveMQ.Advisory.>" read="everyone" write="everyone" admin="everyone"/>
+                </authorizationEntries>
+              </authorizationMap>
+            </map>
+          </authorizationPlugin>
+
+          <simpleAuthenticationPlugin>
+            <users>
+              <authenticationUser username="mcollective" password="marionette" groups="mcollective,everyone"/>
+              <authenticationUser username="admin" password="secret" groups="mcollective,admins,everyone"/>
+            </users>
+          </simpleAuthenticationPlugin>
+
+          <statisticsBrokerPlugin/>
+        </plugins>
+
+        <systemUsage>
+          <systemUsage>
+            <memoryUsage>
+              <memoryUsage limit="20 mb"/>
+            </memoryUsage>
+            <storeUsage>
+              <storeUsage limit="1 gb" name="foo"/>
+            </storeUsage>
+            <tempUsage>
+              <tempUsage limit="100 mb"/>
+            </tempUsage>
+          </systemUsage>
+        </systemUsage>
+
+        <transportConnectors>
+          <transportConnector name="openwire" uri="tcp://0.0.0.0:61616"/>
+          <transportConnector name="stomp" uri="stomp://0.0.0.0:61613"/>
+        </transportConnectors>
+
+      </broker>
+
+    </beans>

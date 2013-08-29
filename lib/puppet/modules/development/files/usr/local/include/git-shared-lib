@@ -1,0 +1,159 @@
+#!/bin/sh
+
+export POSIXLY_CORRECT=1
+
+. "/usr/lib/git-core/gitflow-common"
+
+# Require a git repo
+require_git_repo
+
+# Enforce git config user.name globally
+if ! git config --global user.name > /dev/null
+then
+	warn "You have not yet configured a global git user.name setting"
+	warn "This should be your real (full) name"
+	echo -n "Enter your full name: "
+	read response
+
+	if ! git config --global user.name "$response"
+	then
+		warn "... failed to set user name"
+		die "... please run 'git config --global user.name <your name>' manually"
+	fi
+fi
+
+# Enforce git config user.email globally
+if ! git config --global user.email > /dev/null
+then
+	warn "You have not yet configured a global git user.email setting"
+	warn "This should be your email"
+	echo -n "Enter your work email: "
+	read response
+
+	if ! git config --global user.email "$response"
+	then
+		warn "... failed to set user email"
+		die "... please run 'git config --global user.email <your email>' manually"
+	fi
+fi
+
+# Change to the root of the git folder
+export project_root=`git rev-parse --show-toplevel`
+cd "$project_root"
+
+export project_basename=`basename $project_root`
+
+# Load custom git flow settings
+gitflow_load_settings
+
+git_is_clean_working_tree_with_submodules() {
+	if ! git diff --no-ext-diff --quiet --exit-code; then
+		return 1
+	elif ! git diff-index --cached --quiet HEAD --; then
+		return 2
+	else
+		return 0
+	fi
+}
+
+is_submodule() {
+	parent=$(readlink -f $(git rev-parse --show-toplevel)/../)
+	$(cd $parent && git rev-parse --is-inside-work-tree > /dev/null 2>&1)
+}
+
+git_file_clean() {
+	if ! git diff --no-ext-diff --ignore-submodules --quiet --exit-code $1; then
+		return 1
+	elif ! git diff-index --cached --quiet --ignore-submodules HEAD -- $1; then
+		return 2
+	else
+		return 0
+	fi
+}
+
+git_require_no_existing_release_branches() {
+	VERSION_PREFIX=$(eval "echo `git config --get gitflow.prefix.versiontag`")
+	PREFIX=$(git config --get gitflow.prefix.release)
+
+	local release_branches=$(echo "$(git_local_branches)" | grep "^$PREFIX")
+	local first_branch=$(echo ${release_branches} | head -n1)
+	first_branch=${first_branch#$PREFIX}
+	[ -z "$release_branches" ] || die "There is an existing release branch ($first_branch). Finish that one first."
+}
+
+is_integer() {
+	printf "%d" $1 > /dev/null 2>&1
+	return $?
+}
+
+find_git_remote() {
+	remotes=$(git remote)
+	remote_count=$(git remote | wc -l)
+
+	if [ $remote_count = 1 ]
+	then
+		# Find the remote name
+		git_remote_name=$(git remote | head -n 1 | tail -n 1)
+	elif [ $remote_count -gt 1 ]
+	then
+		echo ""
+		echo "You have $remote_count git remotes - please chose which you want to push to"
+		echo ""
+
+		while [ true ]
+		do
+			i=1
+			for remote in $remotes
+			do
+				if [ "$remote" = "$MY_GIT_REMOTE" ]
+				then
+					echo "Found remote based on CLI argument 'r': $MY_GIT_REMOTE"
+					FOUND_GIT_REMOTE=1
+					res=$i
+				fi
+				echo "$i) $remote"
+				i=$(expr $i + 1)
+			done
+
+			if [ "$FOUND_GIT_REMOTE" != 1 ]
+			then
+				echo -n "-> "
+				read res
+			fi
+
+			# Make sure the user did input something
+			if [ -z $res ]
+			then
+				echo "Please select a remote"
+				continue
+			fi
+
+			# Make sure the input is a valid number
+			if ! is_integer $res
+			then
+				echo "Please select a remote"
+				continue
+			fi
+
+			# Make sure its not greater than the number of remotes
+			if [ $res -gt $remote_count ]
+			then
+				echo "Please select a remote"
+				continue
+			fi
+
+			# Make sure its not less than 1 (e.g 0)
+			if [ $res -lt 1 ]
+			then
+				echo "Please select a remote"
+				continue
+			fi
+
+			# Find the remote name
+			git_remote_name=$(git remote | head -n $res | tail -n 1)
+
+			# Stop asking questions
+			break
+		done
+	fi
+}

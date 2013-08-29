@@ -1,0 +1,30 @@
+[submodule "lib/puppet/modules/apt"]
+	path = lib/puppet/modules/apt
+	url = https://github.com/puppetlabs/puppetlabs-apt.git
+[submodule "lib/puppet/modules/concat"]
+	path = lib/puppet/modules/concat
+	url = https://github.com/ripienaar/puppet-concat.git
+[submodule "lib/puppet/modules/inifile"]
+	path = lib/puppet/modules/inifile
+	url = https://github.com/cprice-puppet/puppetlabs-inifile.git
+[submodule "lib/puppet/modules/mysql"]
+	path = lib/puppet/modules/mysql
+	url = https://github.com/puppetlabs/puppetlabs-mysql.git
+[submodule "lib/puppet/modules/php"]
+	path = lib/puppet/modules/php
+	url = https://github.com/jippi/puppet-php.git
+[submodule "lib/puppet/modules/stdlib"]
+	path = lib/puppet/modules/stdlib
+	url = https://github.com/puppetlabs/puppetlabs-stdlib.git
+[submodule "lib/puppet/modules/firewall"]
+	path = lib/puppet/modules/firewall
+	url = https://github.com/puppetlabs/puppetlabs-firewall.git
+[submodule "lib/puppet/modules/sudo"]
+	path = lib/puppet/modules/sudo
+	url = https://github.com/saz/puppet-sudo.git
+[submodule "lib/puppet/modules/newrelic"]
+	path = lib/puppet/modules/newrelic
+	url = https://github.com/joemiller/puppet-newrelic.git
+[submodule "lib/puppet/modules/logstash"]
+	path = lib/puppet/modules/logstash
+	url = https://github.com/electrical/puppet-logstash.git

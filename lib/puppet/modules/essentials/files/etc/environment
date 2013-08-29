@@ -1,0 +1,9 @@
+# Make imagick not use threads; added by CW @ 08.11.2012
+#
+# Fixes crash ala https://gist.github.com/4035006 and https://gist.github.com/4035171
+# IRC log from #php.pecl @ EFnet - https://gist.github.com/1b545a06a8dfc637016e
+#
+# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=652960
+# http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=568349
+# http://www.imagemagick.org/discourse-server/viewtopic.php?f=3&t=16453
+export MAGICK_THREAD_LIMIT=1

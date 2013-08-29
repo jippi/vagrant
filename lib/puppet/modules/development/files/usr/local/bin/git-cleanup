@@ -1,0 +1,35 @@
+#!/bin/bash
+
+echo -n "Fetching latest ... "
+git fetch
+echo "done"
+
+echo "Deleting merged local feature branches ... "
+branches=`git branch --no-color --merged origin/master`
+for branch in $branches;
+do
+	if [[ "$branch" =~ ^([a-z]+)\/(hotfix\/.*$|feature\/.*$) ]]; then
+		git branch -d $branch;
+	fi
+done
+echo "done"
+
+echo "Deleting local refs to remote branches that don't exist ... "
+git remote prune origin
+echo "done"
+
+echo "Deleting merged remote feature and hotfix branches ... "
+branches=`git branch -r --no-color --merged origin/master`
+for branch in $branches;
+do
+	if [[ "$branch" =~ ^([a-z]+)\/(hotfix\/.*$|feature\/.*$) ]]; then
+		remote=${BASH_REMATCH[1]};
+		branch=${BASH_REMATCH[2]};
+		git push $remote :$branch;
+	fi
+done
+
+echo "done"
+
+echo ""
+echo "all finished"

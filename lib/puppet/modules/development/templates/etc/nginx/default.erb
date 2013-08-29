@@ -1,0 +1,44 @@
+server {
+    listen 80;
+    server_name <%= name -%>.local.cakefest.org *.<%= name -%>.local.cakefest.org;
+
+    access_log /var/www/<%= name -%>/logs/access.log;
+    error_log  /var/www/<%= name -%>/logs/error.log;
+
+    root /var/www/<%= name -%>/htdocs;
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$uri&$args;
+    }
+
+    send_timeout 600s;
+
+    location /phpmyadmin {
+        root /opt/phpmyadmin;
+
+        location ~ \.php$ {
+            try_files $uri =404;
+            include fastcgi_params;
+            fastcgi_pass unix:/tmp/php-fpm.sock;
+            fastcgi_index index.php;
+            fastcgi_intercept_errors on; # to support 404s for PHP files not found
+            fastcgi_param SCRIPT_FILENAME /opt/phpmyadmin$fastcgi_script_name;
+            fastcgi_read_timeout 600s;
+        }
+    }
+
+    location ~ \.php$ {
+        try_files $uri =404;
+        include fastcgi_params;
+        fastcgi_pass unix:/tmp/php-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_intercept_errors on; # to support 404s for PHP files not found
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_read_timeout 600s;
+
+        # For New Relic
+        fastcgi_param HTTP_X_REQUEST_START "t=${msec}000";
+    }
+
+}

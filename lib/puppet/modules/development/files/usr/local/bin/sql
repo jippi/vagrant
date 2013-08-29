@@ -1,0 +1,120 @@
+#!/bin/bash
+
+# Help output
+#
+sql_show_help_and_exit() {
+	echo "sql <command>"
+	echo ""
+	echo "Utility script to work with SQL between local and development environment"
+	echo ""
+	echo "Commands:"
+	echo ""
+	echo " * sql console"
+	echo "	Open a interactive MySQL console"
+	echo ""
+	echo " * sql pull"
+	echo "	Download and import database from OfficeCloud to local server"
+	echo ""
+	echo " * sql schema"
+	echo "	Dump schema DDL into app/Config/schema.sql"
+	echo "	unless you pipe stdout (e.g. '> /some/other/place.sql')"
+	echo ""
+	echo " * sql data"
+	echo "	Dump data from all tables into app/Config/data_\$date.sql"
+	echo "	unless you pipe stdout (e.g. '> /some/other/place.sql')"
+	echo ""
+	echo " * sql backup"
+	echo "	Dump schema DDL and data into app/Config/backup_\$date.sql"
+	echo "	unless you pipe stdout (e.g. '> /some/other/place.sql')"
+	echo ""
+	exit 1
+}
+
+here=$(readlink -f .)
+
+if [[ ! $here =~ ^/var/www/([^/]+) ]]; then
+	echo "Error: Not in a project project folder (/var/www/*/htdocs)"
+	echo ""
+	sql_show_help_and_exit
+fi
+
+PROJECT_NAME=${BASH_REMATCH[1]}
+CONFIG_DIR="/var/www/$PROJECT_NAME/"
+
+. "$CONFIG_DIR/database.sh"
+
+# Ensure we got at least one command as argument
+if [ -z $1 ]
+then
+	sql_show_help_and_exit
+fi
+
+# The primary command to execute
+SQL_COMMAND=$1
+
+# Default arguments to mysql and mysqldump
+MYSQL_ARGS="--host=$DEFAULT_HOST --user=$DEFAULT_LOGIN --password=$DEFAULT_PASSWORD --database $DEFAULT_DATABASE --default-character-set=$DEFAULT_ENCODING"
+
+# Suffix used for unique backups
+DUMP_SUFFIX=$(date "+%Y%m%d_%H%M")
+
+# Pull MySQL database from OfficeCloud down to the local machine
+# This will replace the existing database
+#
+sql_command_pull() {
+	echo "WARNING: This will overwrite all data in your local database"
+	echo -n "Do you really want to do this? [y|n] "
+	read answer
+	if [ "x$answer" != "xy" ]
+	then
+		echo "Canceled..."
+		exit 1
+	fi
+
+	echo "Pulling down MySQL DB '$DEFAULT_DATABASE' from development.."
+	ssh -i $HOME/.ssh/id_rsa $USER@access.development.dk "cd /var/www/$PROJECT_NAME/htdocs/app && /home/shared/bin/nbackup" | mysql $MYSQL_ARGS
+}
+
+# Primary command dispatcher
+#
+case $SQL_COMMAND in
+	'console' )
+		mysql $MYSQL_ARGS
+		;;
+
+	'pull' )
+		sql_command_pull $@
+		;;
+
+	'schema' )
+		if [ -t 1 ];
+		then
+			mysqldump $MYSQL_ARGS -dRC --skip-dump-date --skip-add-drop-table | sed -e 's/CREATE TABLE/CREATE TABLE IF NOT EXISTS/g' -e 's/ AUTO_INCREMENT=[0-9]\+//' > "$CONFIG_DIR/schema.sql"
+		else
+			mysqldump $MYSQL_ARGS -dRC --skip-dump-date --skip-add-drop-table | sed -e 's/CREATE TABLE/CREATE TABLE IF NOT EXISTS/g' -e 's/ AUTO_INCREMENT=[0-9]\+//'
+		fi
+		;;
+
+	'data' )
+		if [ -t 1 ];
+		then
+			mysqldump $MYSQL_ARGS -CtK --skip-extended-insert --skip-dump-date --insert-ignore > "$CONFIG_DIR/data_$DUMP_SUFFIX.sql"
+		else
+			mysqldump $MYSQL_ARGS -CtK --skip-extended-insert --skip-dump-date --insert-ignore
+		fi
+		;;
+
+	'backup' )
+		if [ -t 1 ];
+		then
+			mysqldump $MYSQL_ARGS -CK > "$CONFIG_DIR/backup_$DUMP_SUFFIX.sql"
+		else
+			mysqldump $MYSQL_ARGS -CK
+		fi
+		;;
+
+	*)
+		echo "Unknown command: $SQL_COMMAND"
+		echo ""
+		sql_show_help_and_exit
+esac

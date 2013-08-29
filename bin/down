@@ -1,0 +1,11 @@
+#!/bin/bash
+
+. lib/common.sh
+
+echo "---------------------------------"
+echo "Booting vagrant box ($ENV)"
+echo "---------------------------------"
+cd_env
+prefix=`date "+%Y%m%d-%H%M"`
+VAGRANT_LOG=INFO vagrant halt 2>&1 | tee "logs/${prefix}-vagrant-up.log"
+

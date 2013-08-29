@@ -1,0 +1,6 @@
+{
+  "require": {
+    "symfony/Yaml": "2.3.*",
+    "aws/aws-sdk-php": "2.*"
+  }
+}

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+args="--detailed-exitcodes"
+if [ ! -n "$SSH_CONNECTION" ]
+then
+  args="$args --logdest syslog"
+fi
+
+cd /etc/puppet
+puppet apply $args "manifests/<%= @manifest -%>.pp"

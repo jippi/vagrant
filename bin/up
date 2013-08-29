@@ -1,0 +1,21 @@
+#!/bin/bash
+
+. lib/common.sh
+
+echo "---------------------------------"
+echo "Updating source code"
+echo "---------------------------------"
+if !(git pull -q --all; git submodule sync --recursive; git submodule update --init --recursive)
+then
+	echo "... failed"
+	exit 1
+else
+	echo " ... done"
+fi
+
+echo "---------------------------------"
+echo "Booting vagrant box ($ENV)"
+echo "---------------------------------"
+cd_env
+prefix=`date "+%Y%m%d-%H%M"`
+VAGRANT_LOG=INFO vagrant up 2>&1 | tee "logs/${prefix}-vagrant-up.log"

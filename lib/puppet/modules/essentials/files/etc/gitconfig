@@ -1,0 +1,117 @@
+; https://github.com/jfelchner/dotfiles/blob/master/git/gitconfig
+
+[core]
+	excludesfile = /home/.gitignore
+
+[branch]
+	autosetuprebase = never
+
+[color]
+  ui = true
+  branch = true
+  decorate = true
+  grep = true
+  interactive = always
+  pager = true
+  showbranch = true
+  diff = true
+  status = true
+  branch = true
+
+[color "branch"]
+  current = white bold
+  local = yellow bold
+  remote = green bold
+  upstream = blue bold
+
+[color "diff"]
+  plain = white bold
+  meta = normal
+  frag = magenta bold
+  func = cyan bold
+  old = red bold
+  new = green bold
+  whitespace = white bold red
+
+[color "grep"]
+  filename = normal
+  separator = normal
+  match = yellow bold
+  linenumber = white
+  selected = white bold
+  context = normal
+
+[color "status"]
+  header = white bold
+  added = green
+  changed = blue
+  untracked = white
+  branch = white bold
+  nobranch = red
+
+[color "interactive"]
+  prompt = yellow bold
+  help = blue
+  error = red bold
+
+[alias]
+	co = checkout
+	ci = commit
+	cp = cherry-pick
+	st = status
+	br = branch
+	df = diff
+	dc = diff --cached
+	lg = log -p
+	di = diff
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	lol = log --graph --decorate --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	lola = log --graph --decorate --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --all
+	ls = ls-files
+	dcommit = svn dcommit --rmdir --verbose
+	ign = ls-files -o -i --exclude-standard
+
+[diff]
+	renames = copies
+  mnemonicprefix = true
+  context = 10
+  dirstat = changes
+  algorithm = patience
+
+[interactive]
+  singlekey = true
+
+[merge]
+  log = true
+  verbosity = 1
+
+[grep]
+  lineNumber = true
+  patternType = perl
+
+[apply]
+  whitespace = nowarn
+  ignorewhitespace = change
+
+[push]
+	default = current
+
+[branch "master"]
+	rebase = false
+
+[branch "develop"]
+	rebase = false
+
+[status]
+  showUntrackedFiles = all
+  relativePaths = false
+
+[gitflow "branch"]
+  master = master
+  develop = development
+[gitflow "prefix"]
+  feature = feature/
+  release = release/
+  hotfix = hotfix/
+  support = support/
+  versiontag = release/
