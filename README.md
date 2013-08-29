@@ -23,6 +23,7 @@ bin/up
 ### SSH:
 
 user: cakefest
+
 pass: cakefest
 
 ### Hostname:
@@ -47,6 +48,7 @@ Nginx is configured to use `www/cakefest/htdocs/webroot/` as root
 ### MySQL
 
 user: cakefest
+
 pass: cakefest
 
 ### phpmyadmin
