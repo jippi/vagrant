@@ -5,7 +5,7 @@ server {
     access_log /var/www/<%= name -%>/logs/access.log;
     error_log  /var/www/<%= name -%>/logs/error.log;
 
-    root /var/www/<%= name -%>/htdocs;
+    root /var/www/<%= name -%>/htdocs/webroot;
     index index.php index.html index.htm;
 
     location / {
